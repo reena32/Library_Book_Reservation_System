@@ -1,5 +1,6 @@
 # 📚 Library Book Reservation System
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-success?style=for-the-badge&logo=github&logoColor=white)](https://reena32.github.io/Library_Book_Reservation_System/)
 [![Java](https://img.shields.io/badge/Java-21%20LTS-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Hibernate](https://img.shields.io/badge/Hibernate-ORM%206.6-59666C?style=for-the-badge&logo=hibernate&logoColor=white)](https://hibernate.org/)
@@ -15,7 +16,8 @@ An enterprise-ready, full-stack **Library Book Reservation and Inventory Managem
 ## 📌 About
 
 - **Description:** A robust full-stack Library Book Reservation and Inventory Management System built with Java 21, Spring Boot 3, Spring Data JPA, Hibernate, and Bootstrap 5. Provides role-based portals for students and administrators, real-time book availability tracking, reservation lifecycle management, and dynamic overdue fine calculations.
-- **Website:** https://github.com/reena32/Library_Book_Reservation_System
+- **Live Demo / Website:** [https://reena32.github.io/Library_Book_Reservation_System/](https://reena32.github.io/Library_Book_Reservation_System/)
+- **Repository:** [https://github.com/reena32/Library_Book_Reservation_System](https://github.com/reena32/Library_Book_Reservation_System)
 - **Topics:** `spring-boot`, `java-21`, `library-management-system`, `spring-data-jpa`, `hibernate-orm`, `bootstrap-5`, `h2-database`, `mysql`, `rest-api`, `full-stack`, `capstone-project`, `book-reservation`
 
 ---
