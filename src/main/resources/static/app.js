@@ -1,3 +1,258 @@
+// ============================================================
+// GitHub Pages & Static Hosting Demo Backend (Offline/Demo Mode)
+// When hosted on GitHub Pages (or running without live backend),
+// this intercepts /api requests and simulates the database locally.
+// ============================================================
+(function initStaticDemoMode() {
+    const isGitHubPages = window.location.hostname.includes('github.io') || window.location.protocol === 'file:';
+    if (!isGitHubPages) return;
+
+    console.log('%c[GitHub Pages Live Demo Mode Active]', 'color: #00adb5; font-weight: bold; font-size: 14px;');
+
+    if (!localStorage.getItem('demo_books')) {
+        const initialBooks = [
+            { id: 1, title: 'Clean Code', author: 'Robert C. Martin', category: 'Computer Science', isbn: '978-0132350884', totalCopies: 5, availableCopies: 5 },
+            { id: 2, title: 'Introduction to Algorithms', author: 'Thomas H. Cormen', category: 'Computer Science', isbn: '978-0262033848', totalCopies: 4, availableCopies: 4 },
+            { id: 3, title: 'Database System Concepts', author: 'Abraham Silberschatz', category: 'Information Technology', isbn: '978-0073523323', totalCopies: 3, availableCopies: 3 },
+            { id: 4, title: 'Computer Networking: A Top-Down Approach', author: 'James Kurose', category: 'Networking', isbn: '978-0133594140', totalCopies: 5, availableCopies: 5 },
+            { id: 5, title: 'Operating System Principles', author: 'Peter B. Galvin', category: 'Computer Science', isbn: '978-0471417439', totalCopies: 4, availableCopies: 4 },
+            { id: 6, title: 'Artificial Intelligence: A Modern Approach', author: 'Stuart Russell', category: 'AI & ML', isbn: '978-0136042594', totalCopies: 3, availableCopies: 3 }
+        ];
+        localStorage.setItem('demo_books', JSON.stringify(initialBooks));
+    }
+
+    if (!localStorage.getItem('demo_users')) {
+        const initialUsers = [
+            { id: 1, studentId: 'ADMIN01', name: 'Library Administrator', email: 'admin@library.com', department: 'Library Administration', password: 'admin123', role: 'ADMIN' },
+            { id: 2, studentId: 'STU101', name: 'Demo Student', email: 'student@library.com', department: 'Computer Science', password: 'student123', role: 'STUDENT' }
+        ];
+        localStorage.setItem('demo_users', JSON.stringify(initialUsers));
+    }
+
+    if (!localStorage.getItem('demo_reservations')) {
+        localStorage.setItem('demo_reservations', JSON.stringify([]));
+    }
+
+    if (!localStorage.getItem('demo_fine_rate')) {
+        localStorage.setItem('demo_fine_rate', '1.0');
+    }
+
+    const nativeFetch = window.fetch;
+    window.fetch = async function(url, options = {}) {
+        const urlStr = typeof url === 'string' ? url : url.url;
+        if (!urlStr.includes('/api')) {
+            return nativeFetch.apply(this, arguments);
+        }
+
+        const method = (options.method || 'GET').toUpperCase();
+        const body = options.body ? JSON.parse(options.body) : {};
+        const parsedUrl = new URL(urlStr, window.location.origin);
+        const path = parsedUrl.pathname.replace(/^\/.*?(?=\/api)/, '');
+
+        const getBooks = () => JSON.parse(localStorage.getItem('demo_books') || '[]');
+        const saveBooks = (b) => localStorage.setItem('demo_books', JSON.stringify(b));
+        const getUsers = () => JSON.parse(localStorage.getItem('demo_users') || '[]');
+        const saveUsers = (u) => localStorage.setItem('demo_users', JSON.stringify(u));
+        const getReservations = () => JSON.parse(localStorage.getItem('demo_reservations') || '[]');
+        const saveReservations = (r) => localStorage.setItem('demo_reservations', JSON.stringify(r));
+
+        const jsonResponse = (data, status = 200) => new Response(JSON.stringify(data), {
+            status: status,
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (path === '/api/auth/login' && method === 'POST') {
+            const { identifier, password } = body;
+            const users = getUsers();
+            const user = users.find(u => (u.email === identifier || u.studentId === identifier) && u.password === password);
+            if (user) return jsonResponse(user);
+            return jsonResponse({ message: 'Invalid credentials. Please check your ID and password.' }, 401);
+        }
+
+        if (path === '/api/auth/register' && method === 'POST') {
+            const users = getUsers();
+            if (users.some(u => u.studentId === body.studentId)) {
+                return jsonResponse({ message: 'Student ID already exists' }, 400);
+            }
+            if (users.some(u => u.email === body.email)) {
+                return jsonResponse({ message: 'Email already exists' }, 400);
+            }
+            const newUser = { ...body, id: Date.now(), role: 'STUDENT' };
+            users.push(newUser);
+            saveUsers(users);
+            return jsonResponse(newUser);
+        }
+
+        if (path === '/api/auth/students' && method === 'GET') {
+            const users = getUsers().filter(u => u.role === 'STUDENT');
+            return jsonResponse(users);
+        }
+
+        if (path === '/api/books' && method === 'GET') {
+            const search = parsedUrl.searchParams.get('search');
+            let books = getBooks();
+            if (search) {
+                const s = search.toLowerCase();
+                books = books.filter(b => 
+                    b.title.toLowerCase().includes(s) || 
+                    b.author.toLowerCase().includes(s) || 
+                    (b.category && b.category.toLowerCase().includes(s)) ||
+                    (b.isbn && b.isbn.toLowerCase().includes(s))
+                );
+            }
+            return jsonResponse(books);
+        }
+
+        const bookIdMatch = path.match(/^\/api\/books\/(\d+)$/);
+        if (bookIdMatch && method === 'GET') {
+            const id = parseInt(bookIdMatch[1]);
+            const book = getBooks().find(b => b.id === id);
+            return book ? jsonResponse(book) : jsonResponse({ message: 'Book not found' }, 404);
+        }
+
+        if (path === '/api/books' && method === 'POST') {
+            const books = getBooks();
+            const newBook = { ...body, id: Date.now() };
+            books.push(newBook);
+            saveBooks(books);
+            return jsonResponse(newBook);
+        }
+
+        if (bookIdMatch && method === 'PUT') {
+            const id = parseInt(bookIdMatch[1]);
+            const books = getBooks();
+            const idx = books.findIndex(b => b.id === id);
+            if (idx === -1) return jsonResponse({ message: 'Book not found' }, 404);
+            books[idx] = { ...books[idx], ...body, id: id };
+            saveBooks(books);
+            return jsonResponse(books[idx]);
+        }
+
+        if (bookIdMatch && method === 'DELETE') {
+            const id = parseInt(bookIdMatch[1]);
+            let books = getBooks();
+            books = books.filter(b => b.id !== id);
+            saveBooks(books);
+            return jsonResponse({ message: 'Book deleted successfully' });
+        }
+
+        if (path === '/api/reservations/reserve' && method === 'POST') {
+            const { userId, bookId } = body;
+            const books = getBooks();
+            const users = getUsers();
+            const reservations = getReservations();
+
+            const book = books.find(b => b.id === bookId);
+            const user = users.find(u => u.id === userId);
+
+            if (!book) return jsonResponse({ message: 'Book not found' }, 400);
+            if (!user) return jsonResponse({ message: 'User not found' }, 400);
+            if (book.availableCopies <= 0) return jsonResponse({ message: 'Book is out of stock' }, 400);
+
+            const active = reservations.filter(r => r.user.id === userId && r.status === 'RESERVED');
+            if (active.some(r => r.book.id === bookId)) {
+                return jsonResponse({ message: 'You already have an active reservation for this book' }, 400);
+            }
+
+            book.availableCopies -= 1;
+            saveBooks(books);
+
+            const now = new Date();
+            const due = new Date();
+            due.setDate(now.getDate() + 14);
+
+            const newReservation = {
+                id: Date.now(),
+                user: user,
+                book: book,
+                reservationDate: now.toISOString().split('T')[0],
+                dueDate: due.toISOString().split('T')[0],
+                returnDate: null,
+                status: 'RESERVED',
+                fineAmount: 0.0
+            };
+            reservations.push(newReservation);
+            saveReservations(reservations);
+            return jsonResponse(newReservation);
+        }
+
+        const userResMatch = path.match(/^\/api\/reservations\/user\/(\d+)$/);
+        if (userResMatch && method === 'GET') {
+            const userId = parseInt(userResMatch[1]);
+            const reservations = getReservations().filter(r => r.user.id === userId);
+            return jsonResponse(reservations);
+        }
+
+        if (path === '/api/reservations' && method === 'GET') {
+            return jsonResponse(getReservations());
+        }
+
+        const returnMatch = path.match(/^\/api\/reservations\/(\d+)\/return$/);
+        if (returnMatch && method === 'POST') {
+            const id = parseInt(returnMatch[1]);
+            const reservations = getReservations();
+            const res = reservations.find(r => r.id === id);
+            if (!res) return jsonResponse({ message: 'Reservation not found' }, 404);
+
+            res.status = 'RETURNED';
+            res.returnDate = new Date().toISOString().split('T')[0];
+
+            const books = getBooks();
+            const book = books.find(b => b.id === res.book.id);
+            if (book) {
+                book.availableCopies += 1;
+                saveBooks(books);
+            }
+
+            saveReservations(reservations);
+            return jsonResponse(res);
+        }
+
+        const cancelMatch = path.match(/^\/api\/reservations\/(\d+)\/cancel$/);
+        if (cancelMatch && method === 'POST') {
+            const id = parseInt(cancelMatch[1]);
+            const reservations = getReservations();
+            const res = reservations.find(r => r.id === id);
+            if (!res) return jsonResponse({ message: 'Reservation not found' }, 404);
+
+            res.status = 'CANCELLED';
+
+            const books = getBooks();
+            const book = books.find(b => b.id === res.book.id);
+            if (book) {
+                book.availableCopies += 1;
+                saveBooks(books);
+            }
+
+            saveReservations(reservations);
+            return jsonResponse(res);
+        }
+
+        if (path === '/api/reservations/fine-rate' && method === 'GET') {
+            const rate = parseFloat(localStorage.getItem('demo_fine_rate') || '1.0');
+            return jsonResponse({ dailyFineRate: rate });
+        }
+
+        if (path === '/api/reservations/fine-rate' && method === 'POST') {
+            const rate = body.dailyFineRate || 1.0;
+            localStorage.setItem('demo_fine_rate', rate.toString());
+            return jsonResponse({ message: 'Fine rate updated', dailyFineRate: rate });
+        }
+
+        return jsonResponse({ message: 'Not found in mock API' }, 404);
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const container = document.querySelector('nav .container');
+        if (container) {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-info text-dark ms-2 d-none d-md-inline';
+            badge.innerHTML = '<i class="bi bi-cloud-check me-1"></i>Live Demo (GitHub Pages)';
+            container.querySelector('.navbar-brand')?.appendChild(badge);
+        }
+    });
+})();
+
 // API Base URL
 const API_BASE = '/api';
 
