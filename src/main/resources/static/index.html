@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Book Reservation System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --primary-color: #2b5876;
+            --secondary-color: #4e4376;
+            --accent-color: #00adb5;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .hero-banner {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 55px 0 45px 0;
+            margin-bottom: 30px;
+            border-radius: 0 0 25px 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .book-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        .badge-available {
+            background-color: #28a745;
+        }
+        .badge-unavailable {
+            background-color: #dc3545;
+        }
+        .nav-link.active {
+            font-weight: 600;
+            border-bottom: 2px solid white;
+        }
+        .stat-card {
+            border-radius: 12px;
+            border: none;
+            color: white;
+            transition: transform 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        footer {
+            margin-top: auto;
+            background: #212529;
+            color: #adb5bd;
+            padding: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#" onclick="showSection('homeSection')">
+                <i class="bi bi-book-half fs-3 text-warning"></i>
+                <span>LibReserve</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-nav"></span>
+                <i class="bi bi-list text-white fs-3"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="navHome" href="#" onclick="showSection('homeSection')"><i class="bi bi-house-door me-1"></i> Books Catalog</a>
+                    </li>
+                    <li class="nav-item student-only d-none">
+                        <a class="nav-link" id="navStudent" href="#" onclick="showSection('studentSection')"><i class="bi bi-person-badge me-1"></i> My Dashboard</a>
+                    </li>
+                    <li class="nav-item admin-only d-none">
+                        <a class="nav-link" id="navAdmin" href="#" onclick="showSection('adminSection')"><i class="bi bi-shield-lock me-1"></i> Admin Panel</a>
+                    </li>
+                </ul>
+
+                <!-- User profile / Auth buttons -->
+                <div class="d-flex align-items-center gap-2" id="authButtonsArea">
+                    <button class="btn btn-outline-light btn-sm" onclick="openLoginModal()"><i class="bi bi-box-arrow-in-right me-1"></i> Login</button>
+                    <button class="btn btn-warning btn-sm fw-bold" onclick="openRegisterModal()"><i class="bi bi-person-plus me-1"></i> Register</button>
+                </div>
+                <div class="d-flex align-items-center gap-3 d-none" id="userProfileArea">
+                    <span class="text-white small" id="welcomeUserText"></span>
+                    <button class="btn btn-outline-danger btn-sm" onclick="logout()"><i class="bi bi-power me-1"></i> Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-banner text-center" id="heroBanner">
+        <div class="container">
+            <h1 class="display-5 fw-bold mb-2">College Library Reservation System</h1>
+            <p class="lead mb-4 text-light">Search titles, verify real-time availability, and reserve books in seconds</p>
+            <div class="row justify-content-center">
+                <div class="col-md-7">
+                    <div class="input-group shadow-lg">
+                        <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="searchInput" class="form-control form-control-lg border-0" placeholder="Search by book title or author..." onkeyup="handleSearch(event)">
+                        <button class="btn btn-warning fw-bold px-4" onclick="loadBooks()"><i class="bi bi-arrow-right"></i> Search</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <div class="container mb-5 flex-grow-1">
+
+        <!-- ======================= 1. HOME: BOOKS CATALOG ======================= -->
+        <section id="homeSection">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fw-bold mb-0 text-secondary"><i class="bi bi-collection me-2"></i>Available Books</h3>
+                <span class="text-muted small" id="booksCountText">Loading books...</span>
+            </div>
+            
+            <div class="row g-4" id="booksContainer">
+                <!-- Book Cards populated dynamically by JavaScript -->
+            </div>
+        </section>
+
+        <!-- ======================= 2. STUDENT DASHBOARD ======================= -->
+        <section id="studentSection" class="d-none">
+            <div class="card shadow-sm border-0 mb-4 p-4 bg-white rounded-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <h3 class="fw-bold text-primary mb-1" id="dashStudentName">Welcome</h3>
+                        <p class="text-muted mb-0"><span id="dashStudentId" class="badge bg-secondary me-2"></span><span id="dashStudentDept"></span></p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="loadMyReservations()"><i class="bi bi-arrow-clockwise me-1"></i> Refresh</button>
+                </div>
+            </div>
+
+            <h4 class="fw-bold mb-3"><i class="bi bi-bookmark-check me-2"></i>My Book Reservations</h4>
+            <div class="table-responsive bg-white rounded-3 shadow-sm p-3">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Reservation #</th>
+                            <th>Book Title</th>
+                            <th>Author</th>
+                            <th>Reserved On</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Late Fine</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentReservationsTableBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ======================= 3. ADMIN DASHBOARD ======================= -->
+        <section id="adminSection" class="d-none">
+            <h3 class="fw-bold mb-3 text-dark"><i class="bi bi-speedometer2 me-2"></i>Librarian Admin Dashboard</h3>
+
+            <!-- Stats Overview Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card bg-primary p-3 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-uppercase fw-semibold">Total Books</small>
+                                <h2 class="fw-bold mb-0" id="statTotalBooks">0</h2>
+                            </div>
+                            <i class="bi bi-book fs-1 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-success p-3 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-uppercase fw-semibold">Registered Students</small>
+                                <h2 class="fw-bold mb-0" id="statTotalStudents">0</h2>
+                            </div>
+                            <i class="bi bi-people fs-1 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-warning p-3 shadow-sm text-dark">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-uppercase fw-semibold">Active Reservations</small>
+                                <h2 class="fw-bold mb-0" id="statActiveReservations">0</h2>
+                            </div>
+                            <i class="bi bi-clock-history fs-1 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-danger p-3 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-uppercase fw-semibold">Daily Fine Rate</small>
+                                <h2 class="fw-bold mb-0" id="statFineRateDisplay">$5.00</h2>
+                            </div>
+                            <i class="bi bi-currency-dollar fs-1 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Navigation Tabs -->
+            <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#adminBooksTab"><i class="bi bi-journal-bookmark me-1"></i> Manage Books</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#adminReservationsTab"><i class="bi bi-arrow-repeat me-1"></i> Manage Reservations & Returns</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#adminStudentsTab"><i class="bi bi-people me-1"></i> Registered Students</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#adminSettingsTab"><i class="bi bi-gear me-1"></i> Fine Settings</button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- Tab 1: Book Management -->
+                <div class="tab-pane fade show active" id="adminBooksTab">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">Library Inventory</h5>
+                        <button class="btn btn-success btn-sm fw-bold" onclick="openAddBookModal()"><i class="bi bi-plus-circle me-1"></i> Add New Book</button>
+                    </div>
+                    <div class="table-responsive bg-white rounded-3 shadow-sm p-3">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Author</th>
+                                    <th>Category</th>
+                                    <th>ISBN</th>
+                                    <th>Total</th>
+                                    <th>Available</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminBooksTableBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Reservations & Returns -->
+                <div class="tab-pane fade" id="adminReservationsTab">
+                    <div class="table-responsive bg-white rounded-3 shadow-sm p-3">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Student Name</th>
+                                    <th>Student ID</th>
+                                    <th>Book Title</th>
+                                    <th>Reserved Date</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Calculated Fine</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminReservationsTableBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Registered Students -->
+                <div class="tab-pane fade" id="adminStudentsTab">
+                    <div class="table-responsive bg-white rounded-3 shadow-sm p-3">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Department</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminStudentsTableBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Fine Settings -->
+                <div class="tab-pane fade" id="adminSettingsTab">
+                    <div class="card shadow-sm border-0 p-4 bg-white col-md-6">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-cash-stack me-2"></i>Configure Overdue Fine</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Daily Overdue Fine Amount (in Currency Units)</label>
+                            <input type="number" step="0.5" id="adminFineRateInput" class="form-control" placeholder="e.g. 5.0">
+                            <div class="form-text">Overdue fine is calculated automatically when days pass the reservation due date.</div>
+                        </div>
+                        <button class="btn btn-primary" onclick="updateFineRate()"><i class="bi bi-save me-1"></i> Save Fine Rate</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ======================= MODALS ======================= -->
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-box-arrow-in-right me-2"></i>Account Login</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="loginAlert" class="alert alert-danger d-none" role="alert"></div>
+                    <form id="loginForm" onsubmit="handleLogin(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Student ID or Email</label>
+                            <input type="text" id="loginIdentifier" class="form-control" placeholder="e.g. STU101 or admin@library.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Login</button>
+                    </form>
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">Don't have an account? <a href="#" onclick="switchToRegister()">Register Here</a></small>
+                    </div>
+                    <div class="mt-2 text-center text-muted small bg-light p-2 rounded">
+                        <strong>Default Admin:</strong> admin@library.com / admin123
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-plus me-2"></i>Student Registration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="registerAlert" class="alert alert-danger d-none" role="alert"></div>
+                    <form id="registerForm" onsubmit="handleRegister(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Student ID <span class="text-danger">*</span></label>
+                            <input type="text" id="regStudentId" class="form-control" placeholder="e.g. STU2026" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" id="regName" class="form-control" placeholder="e.g. Reena Sharma" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" id="regEmail" class="form-control" placeholder="e.g. reena@college.edu" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Department</label>
+                            <input type="text" id="regDepartment" class="form-control" placeholder="e.g. Computer Science">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                            <input type="password" id="regPassword" class="form-control" placeholder="Create a secure password" required>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100 py-2 fw-bold">Create Account</button>
+                    </form>
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">Already registered? <a href="#" onclick="switchToLogin()">Login Here</a></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add / Edit Book Modal -->
+    <div class="modal fade" id="bookModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="bookModalTitle"><i class="bi bi-book me-2"></i>Book Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="bookForm" onsubmit="handleSaveBook(event)">
+                        <input type="hidden" id="bookId">
+                        <div class="mb-3">
+                            <label class="form-label">Book Title <span class="text-danger">*</span></label>
+                            <input type="text" id="bookTitle" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Author <span class="text-danger">*</span></label>
+                            <input type="text" id="bookAuthor" class="form-control" required>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Category</label>
+                                <input type="text" id="bookCategory" class="form-control" placeholder="e.g. Computer Science">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">ISBN</label>
+                                <input type="text" id="bookIsbn" class="form-control" placeholder="978-...">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Total Copies <span class="text-danger">*</span></label>
+                                <input type="number" min="1" id="bookTotalCopies" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Available Copies</label>
+                                <input type="number" min="0" id="bookAvailableCopies" class="form-control">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 fw-bold py-2">Save Book</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p class="mb-0">© 2026 College Library Book Reservation System • Built with Spring Boot & MySQL</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- App Logic JS -->
+    <script src="app.js"></script>
+</body>
+</html>
