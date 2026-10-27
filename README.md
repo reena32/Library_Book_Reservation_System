@@ -12,7 +12,16 @@ An enterprise-ready, full-stack **Library Book Reservation and Inventory Managem
 
 ---
 
+## 📌 About
+
+- **Description:** A robust full-stack Library Book Reservation and Inventory Management System built with Java 21, Spring Boot 3, Spring Data JPA, Hibernate, and Bootstrap 5. Provides role-based portals for students and administrators, real-time book availability tracking, reservation lifecycle management, and dynamic overdue fine calculations.
+- **Website:** https://github.com/reena32/Library_Book_Reservation_System
+- **Topics:** `spring-boot`, `java-21`, `library-management-system`, `spring-data-jpa`, `hibernate-orm`, `bootstrap-5`, `h2-database`, `mysql`, `rest-api`, `full-stack`, `capstone-project`, `book-reservation`
+
+---
+
 ## 📑 Table of Contents
+- [About](#-about)
 - [Architecture Overview](#-architecture-overview)
 - [Comprehensive File & Directory Structure](#-comprehensive-file--directory-structure)
 - [Key Features & Role Matrix](#-key-features--role-matrix)
@@ -69,7 +78,7 @@ The system follows an industry-standard **N-Tier layered architecture** ensuring
 Here is the complete project directory tree detailing every file, directory, and its functional responsibility:
 
 ```text
-g:/reena capstone/
+Library_Book_Reservation_System/
 │
 ├── .mvn/                                      # Maven wrapper binaries and configuration
 │   └── wrapper/
